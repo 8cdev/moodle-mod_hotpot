@@ -26,11 +26,12 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+// prevent direct access to this script
 defined('MOODLE_INTERNAL') || die();
 
 $module->cron      = 0;
 $module->component = 'mod_hotpot';
-$module->maturity  = MATURITY_STABLE; // = 200
-$module->release   = 'v3.0.57';
+$module->maturity  = MATURITY_STABLE; // ALPHA=50, BETA=100, RC=150, STABLE=200
+$module->release   = '2013.11.16 (88)';
+$module->version   = 2013111688;
 $module->requires  = 2010112400; // Moodle 2.0
-$module->version   = 2010080357;

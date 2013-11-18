@@ -323,6 +323,21 @@ function hotpot_process_formdata(stdclass &$data, $mform) {
         }
     }
 
+    // set review options
+    $data->reviewoptions = 0;
+    list($times, $items) = hotpot::reviewoptions_times_items();
+    foreach ($times as $timename => $timevalue) {
+        foreach ($items as $itemname => $itemvalue) {
+            $name = $timename.$itemname; // e.g. duringattemptresponses
+            if (isset($data->$name)) {
+                if ($data->$name) {
+                    $data->reviewoptions += ($timevalue & $itemvalue);
+                }
+                unset($data->$name);
+            }
+        }
+    }
+
     // save these form settings as user preferences
     $preferences = array();
     foreach (hotpot::user_preferences_fieldnames() as $fieldname) {
@@ -1406,13 +1421,30 @@ function hotpot_pluginfile_mainfile($context, $component, $filearea) {
     // (file with lowest sortorder in $filearea)
     $mainfile = false;
 
+    // these file types can't be the mainfile
+    $media_filetypes = array('fla', 'flv', 'gif', 'jpeg', 'jpg', 'mp3', 'png', 'swf', 'wav');
+
     $area_files = $fs->get_area_files($context->id, $component, $filearea);
     foreach ($area_files as $file) {
-        if ($file->is_directory() || $file->get_sortorder()==0) {
+        if ($file->is_directory()) {
             continue;
         }
-        if (empty($mainfile) || $file->get_sortorder() < $mainfile->get_sortorder()) {
-            $mainfile  = $file;
+        $filename = $file->get_filename();
+        if (substr($filename, 0, 1)=='.') {
+            continue; // hidden file
+        }
+        $filetype = strtolower(substr($filename, -3));
+        if (in_array($filetype, $media_filetypes)) {
+            continue; // media file
+        }
+        if (empty($mainfile)) { // || $mainfile->get_content()==''
+            $mainfile = $file;
+        } else if ($file->get_sortorder()==0) {
+            // unsorted file - do nothing
+        } else if ($mainfile->get_sortorder()==0) {
+            $mainfile = $file;
+        } else if ($file->get_sortorder() < $mainfile->get_sortorder()) {
+            $mainfile = $file;
         }
     }
 
@@ -1466,9 +1498,9 @@ function hotpot_get_file_info($browser, $areas, $course, $cm, $context, $fileare
  * @param navigation_node $navref An object representing the navigation tree node of the hotpot module instance
  * @param stdclass $course
  * @param stdclass $module
- * @param stdclass $cm
+ * @param cm_info  $cm
  */
-function hotpot_extend_navigation(navigation_node $hotpotnode, stdclass $course, stdclass $module, stdclass $cm) {
+function hotpot_extend_navigation(navigation_node $hotpotnode, stdclass $course, stdclass $module, cm_info $cm) {
     global $CFG, $DB;
     require_once($CFG->dirroot.'/mod/hotpot/locallib.php');
 
